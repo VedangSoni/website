@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahyog Medical Store - Customer & Admin Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .hidden { display: none; }
+        input[type="text"], input[type="password"], input[type="submit"], button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        input[type="submit"], button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .medicine-entry {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .medicine-entry input[type="text"] {
+            width: 30%;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div class="container" id="landingPage">
+        <h2>Welcome to the Medical Store System</h2>
+        <p>Please select your role:</p>
+        <button onclick="openCustomerSearch()">Customer</button>
+        <button onclick="openAdminAccess()">Admin</button>
+    </div>
+
+    <!-- Customer Search Page -->
+    <div class="container hidden" id="customerSearch">
+        <h3>Search for Your Details</h3>
+        <input type="text" id="customerSearchInput" placeholder="Enter Customer ID or Name">
+        <button onclick="searchCustomer()">Search</button>
+        <button onclick="goBack()">Back</button>
+        <div id="customerResult"></div>
+    </div>
+
+    <!-- Admin Password Page -->
+    <div class="container hidden" id="adminPanel">
+        <h3>Admin Access</h3>
+        <input type="password" id="adminPasswordInput" placeholder="Enter Admin Password">
+        <button onclick="checkAdminPassword()">Enter</button>
+        <button onclick="goBack()">Back</button>
+    </div>
+
+    <!-- Admin Main Application -->
+    <div class="container hidden" id="mainApp">
+        <h2>Admin - Customer Details</h2>
+        <form id="addForm">
+            <input type="text" id="customerID" placeholder="Customer ID" required>
+            <input type="text" id="customerName" placeholder="Customer Name" required>
+            <input type="text" id="mobileNumber" placeholder="Mobile Number" required>
+            <div id="medicineDetails">
+                <div class="medicine-entry">
+                    <input type="text" class="medicineName" placeholder="Medicine Name" required>
+                    <input type="text" class="quantity" placeholder="Quantity" required>
+                    <input type="text" class="price" placeholder="Price" required>
+                    <button type="button" class="delete-btn" onclick="deleteMedicineField(this)">Delete</button>
+                </div>
+            </div>
+            <button type="button" onclick="addMedicineFields()">Add Another Medicine</button>
+            <input type="submit" value="Add Details">
+        </form>
+
+        <!-- New "Go to Customer Page" Button -->
+        <button onclick="goToCustomerPage()">Go to Customer Page</button>
+        <button onclick="goBack()">Back to Landing Page</button>
+        <div id="adminResult"></div>
+    </div>
+
+    <script>
+        const adminPassword = "Sahyogcustomers";
+
+        // Load customer data from localStorage
+        let customerData = JSON.parse(localStorage.getItem("customerData")) || [];
+
+        function openCustomerSearch() {
+            document.getElementById("landingPage").classList.add("hidden");
+            document.getElementById("customerSearch").classList.remove("hidden");
+        }
+
+        function openAdminAccess() {
+            document.getElementById("landingPage").classList.add("hidden");
+            document.getElementById("adminPanel").classList.remove("hidden");
+        }
+
+        function checkAdminPassword() {
+            const enteredPassword = document.getElementById("adminPasswordInput").value;
+            if (enteredPassword === adminPassword) {
+                document.getElementById("adminPanel").classList.add("hidden");
+                document.getElementById("mainApp").classList.remove("hidden");
+                displayCustomerData();
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function goBack() {
+            document.getElementById("landingPage").classList.remove("hidden");
+            document.getElementById("customerSearch").classList.add("hidden");
+            document.getElementById("adminPanel").classList.add("hidden");
+            document.getElementById("mainApp").classList.add("hidden");
+        }
+
+        function goToCustomerPage() {
+            document.getElementById("mainApp").classList.add("hidden");
+            document.getElementById("customerSearch").classList.remove("hidden");
+        }
+
+        function addMedicineFields() {
+            const medicineContainer = document.getElementById("medicineDetails");
+            const newMedicineField = document.createElement("div");
+            newMedicineField.classList.add("medicine-entry");
+            newMedicineField.innerHTML = `
+                <input type="text" class="medicineName" placeholder="Medicine Name" required>
+                <input type="text" class="quantity" placeholder="Quantity" required>
+                <input type="text" class="price" placeholder="Price" required>
+                <button type="button" class="delete-btn" onclick="deleteMedicineField(this)">Delete</button>
+            `;
+            medicineContainer.appendChild(newMedicineField);
+        }
+
+        function deleteMedicineField(button) {
+            const medicineEntry = button.parentElement;
+            medicineEntry.remove();
+        }
+
+        document.getElementById("addForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const customerID = document.getElementById("customerID").value;
+            const customerName = document.getElementById("customerName").value;
+            const mobileNumber = document.getElementById("mobileNumber").value;
+            const medicines = [];
+
+            document.querySelectorAll(".medicine-entry").forEach(entry => {
+                medicines.push({
+                    medicineName: entry.querySelector(".medicineName").value,
+                    quantity: entry.querySelector(".quantity").value,
+                    price: entry.querySelector(".price").value
+                });
+            });
+
+            customerData.push({ customerID, customerName, mobileNumber, medicines });
+            localStorage.setItem("customerData", JSON.stringify(customerData));
+
+            alert("Customer details added successfully!");
+            document.getElementById("addForm").reset();
+            displayCustomerData();
+        });
+
+        function displayCustomerData() {
+            const adminResult = document.getElementById("adminResult");
+            adminResult.innerHTML = "<h3>Current Customer Data:</h3>";
+            if (customerData.length === 0) {
+                adminResult.innerHTML += "<p>No customer data found.</p>";
+            } else {
+                customerData.forEach((customer, index) => {
+                    adminResult.innerHTML += `
+                        <div>
+                            <h4>ID: ${customer.customerID} - ${customer.customerName}</h4>
+                            <p>Mobile Number: ${customer.mobileNumber}</p>
+                            <ul>
+                                ${customer.medicines.map(med => `
+                                    <li>${med.medicineName} - Quantity: ${med.quantity}, Price: ${med.price}</li>
+                                `).join('')}
+                            </ul>
+                            <button onclick="shareCustomerDetails(${index})">Share</button>
+                            <button onclick="confirmDeleteCustomer(${index})">Delete</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function searchCustomer() {
+            const searchQuery = document.getElementById("customerSearchInput").value.toLowerCase();
+            const results = customerData.filter(customer => 
+                customer.customerID.toLowerCase() === searchQuery ||
+                customer.customerName.toLowerCase() === searchQuery
+            );
+
+            const customerResult = document.getElementById("customerResult");
+            if (results.length === 0) {
+                customerResult.innerHTML = "<p>No matching data found.</p>";
+            } else {
+                customerResult.innerHTML = "<h3>Search Results:</h3>";
+                results.forEach(customer => {
+                    customerResult.innerHTML += `
+                        <div>
+                            <h4>ID: ${customer.customerID} - ${customer.customerName}</h4>
+                            <p>Mobile Number: ${customer.mobileNumber}</p>
+                            <ul>
+                                ${customer.medicines.map(med => `
+                                    <li>${med.medicineName} - Quantity: ${med.quantity}, Price: ${med.price}</li>
+                                `).join('')}
+                            </ul>
+                            <button onclick="shareCustomerDetails(customerData.indexOf(customer))">Share</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function shareCustomerDetails(index) {
+            const customer = customerData[index];
+            const details = `
+                Customer ID: ${customer.customerID}
+                Name: ${customer.customerName}
+                Mobile Number: ${customer.mobileNumber}
+                Medicines: ${customer.medicines.map(med => ${med.medicineName} - Quantity: ${med.quantity}, Price: ${med.price}).join('; ')}
+            `;
+            navigator.clipboard.writeText(details).then(() => {
+                alert('Customer details copied to clipboard!');
+            }, () => {
+                alert('Failed to copy customer details.');
+            });
+        }
+
+        function confirmDeleteCustomer(index) {
+            const customer = customerData[index];
+            const password = prompt(Enter the first four letters of the customer's name (${customer.customerName.substring(0, 4)}):);
+            if (password && password === customer.customerName.substring(0, 4)) {
+                customerData.splice(index, 1); // Remove the customer
+                localStorage.setItem("customerData", JSON.stringify(customerData));
+                alert('Customer details deleted successfully!');
+                displayCustomerData();
+            } else {
+                alert('Incorrect password!');
+            }
+        }
+    </script>
+</body>
+</html>
